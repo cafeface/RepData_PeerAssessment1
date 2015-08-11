@@ -54,20 +54,21 @@ steps_per_interval = tapply(activity$steps,
 plot(as.numeric(names(steps_per_interval)), 
      steps_per_interval, 
      type = "l", 
-     main = "Average (Over 61 Days) Steps in Five-Minute Interval", 
-     xlab = "Interval Start (Minutes after Midnight)", 
+     main = "Average (Over 61 Days) Reported Steps in Five-Minute Interval", 
+     xlab = "Interval Start Time", 
      ylab = "Average Number of Steps in Interval")
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-3-1.png) 
 
 ```r
-which.max(steps_per_interval)
+wm <- which.max(steps_per_interval)
+
+sprintf("The five-minute interval beginning %s minutes after midnight has the highest number of reported steps taken, averaged across the days in the dataset.", names(wm)[1])
 ```
 
 ```
-## 835 
-## 104
+## [1] "The five-minute interval beginning 835 minutes after midnight has the highest number of reported steps taken, averaged across the days in the dataset."
 ```
 
 ## Imputing missing values
@@ -165,17 +166,31 @@ require(ggplot2)
 ```
 
 ```r
+intervals = unique(activity$interval)
+
 final <- 
     rbind.data.frame(data.frame(steps = steps_per_interval_weekends, 
-                                interval = seq.int(0,2355, length.out = 288),
+                                interval = intervals,
                                 day = "Weekend"),
                      data.frame(steps = steps_per_interval_weekdays,
-                                interval = seq.int(0, 2355, length.out = 288), 
+                                interval = intervals, 
                                 day = "Weekday"))
 
+str(final)
+```
+
+```
+## 'data.frame':	576 obs. of  3 variables:
+##  $ steps   : Named num  0.21462 0.04245 0.01651 0.01887 0.00943 ...
+##   ..- attr(*, "names")= chr  "0" "5" "10" "15" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+##  $ day     : Factor w/ 2 levels "Weekend","Weekday": 1 1 1 1 1 1 1 1 1 1 ...
+```
+
+```r
 qplot(interval, steps, data = final, geom = "line") + 
     facet_grid(day ~ .) + 
-    labs(x = "Interval Start (Minutes After Midnight)", 
+    labs(x = "Interval Start Time", 
          y = "Average Number of Steps Taken in Interval", 
          title = "Average Steps Taken in Five-Minute Interval")
 ```

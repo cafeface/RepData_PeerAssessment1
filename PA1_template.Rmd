@@ -41,11 +41,13 @@ steps_per_interval = tapply(activity$steps,
 plot(as.numeric(names(steps_per_interval)), 
      steps_per_interval, 
      type = "l", 
-     main = "Average (Over 61 Days) Steps in Five-Minute Interval", 
-     xlab = "Interval Start (Minutes after Midnight)", 
+     main = "Average (Over 61 Days) Reported Steps in Five-Minute Interval", 
+     xlab = "Interval Start Time", 
      ylab = "Average Number of Steps in Interval")
 
-which.max(steps_per_interval)
+wm <- which.max(steps_per_interval)
+
+sprintf("The five-minute interval beginning %s minutes after midnight has the highest number of reported steps taken, averaged across the days in the dataset.", names(wm)[1])
 ```
 
 ## Imputing missing values
@@ -104,17 +106,21 @@ steps_per_interval_weekends = tapply(wkends$steps,
                                      mean)
 require(ggplot2)
 
+intervals = unique(activity$interval)
+
 final <- 
     rbind.data.frame(data.frame(steps = steps_per_interval_weekends, 
-                                interval = seq.int(0,2355, length.out = 288),
+                                interval = intervals,
                                 day = "Weekend"),
                      data.frame(steps = steps_per_interval_weekdays,
-                                interval = seq.int(0, 2355, length.out = 288), 
+                                interval = intervals, 
                                 day = "Weekday"))
+
+str(final)
 
 qplot(interval, steps, data = final, geom = "line") + 
     facet_grid(day ~ .) + 
-    labs(x = "Interval Start (Minutes After Midnight)", 
+    labs(x = "Interval Start Time", 
          y = "Average Number of Steps Taken in Interval", 
          title = "Average Steps Taken in Five-Minute Interval")
 ```
