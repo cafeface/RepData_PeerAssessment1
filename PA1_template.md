@@ -31,7 +31,7 @@ tail(activity$interval)
 # so it is not a uniform sequence:
 
 intervals <- unique(activity$interval)
-plot(0:(length(intervals) - 1), intervals, type = 'l')
+plot(0:(length(intervals) - 1), intervals, type = 'l', ylim = c(0, 2500))
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-1-1.png) 
@@ -42,7 +42,7 @@ plot(0:(length(intervals) - 1), intervals, type = 'l')
 times <- strptime(sprintf("%04d", intervals), "%H%M")
 hours <- difftime(times, strptime("0000", "%H%M")) / 3600
 
-plot(hours, intervals, type = 'l')
+plot(0:(length(hours) - 1), hours, type = 'l', ylim = c(0, 25))
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-1-2.png) 

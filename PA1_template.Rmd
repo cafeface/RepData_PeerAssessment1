@@ -20,14 +20,14 @@ tail(activity$interval)
 # so it is not a uniform sequence:
 
 intervals <- unique(activity$interval)
-plot(0:(length(intervals) - 1), intervals, type = 'l')
+plot(0:(length(intervals) - 1), intervals, type = 'l', ylim = c(0, 2500))
 
 # Remedy this by converting to time, then to hours after midnight:
 
 times <- strptime(sprintf("%04d", intervals), "%H%M")
 hours <- difftime(times, strptime("0000", "%H%M")) / 3600
 
-plot(hours, intervals, type = 'l')
+plot(0:(length(hours) - 1), hours, type = 'l', ylim = c(0, 25))
 
 # Just in case the data are not entirely orderly:
 
