@@ -10,7 +10,34 @@ output:
 
 ``` {r}
 unzip("activity.zip")
-activity = read.csv("activity.csv")
+activity <- read.csv("activity.csv")
+
+str(activity)
+
+tail(activity$interval)
+
+# Although interval is represented as integer, the integer is %H%M coded, 
+# so it is not a uniform sequence:
+
+intervals <- unique(activity$interval)
+plot(0:(length(intervals) - 1), intervals, type = 'l')
+
+# Remedy this by converting to time, then to hours after midnight:
+
+times <- strptime(sprintf("%04d", intervals), "%H%M")
+hours <- difftime(times, strptime("0000", "%H%M")) / 3600
+
+plot(hours, intervals, type = 'l')
+
+# Just in case the data are not entirely orderly:
+
+as.hour <- function(intervals) {
+    times <- strptime(sprintf("%04d", intervals), "%H%M")
+    hours <- difftime(times, strptime("0000", "%H%M")) / 3600
+    return(hours)
+}
+
+activity$hour = as.hour(activity$interval)
 ```
 
 ## What is mean total number of steps taken per day?
@@ -19,6 +46,9 @@ activity = read.csv("activity.csv")
 steps_per_day = tapply(activity$steps, 
                        activity$date, 
                        function(x) sum(x, na.rm = TRUE))
+
+summary(steps_per_day)
+
 hist(steps_per_day, 
      main = "Distribution of Total Reported Steps Taken Per Day", 
      xlab = "Reported Steps per Day", 
@@ -35,32 +65,40 @@ sprintf("Median number of reported steps per day is %4.0f.",
 
 ``` {r}
 steps_per_interval = tapply(activity$steps, 
-                            activity$interval, 
+                            activity$hour, 
                             function(x) mean(x, na.rm = TRUE))
 
 plot(as.numeric(names(steps_per_interval)), 
      steps_per_interval, 
      type = "l", 
      main = "Average (Over 61 Days) Reported Steps in Five-Minute Interval", 
-     xlab = "Interval Start Time", 
-     ylab = "Average Number of Steps in Interval")
+     xlab = "Interval Start Time (Hours After Midnight)", 
+     ylab = "Average Number of Steps in Interval",
+     xlim = c(0, 25))
+
+summary(steps_per_interval)
 
 wm <- which.max(steps_per_interval)
+max_minutes <- as.numeric(names(wm)[1]) * 60
+maxH <- as.integer(max_minutes %/% 60)
+maxM <- as.integer(max_minutes %% 60)
 
-sprintf("The five-minute interval beginning %s minutes after midnight has the highest number of reported steps taken, averaged across the days in the dataset.", names(wm)[1])
+sprintf("The five-minute interval beginning at %02d:%02d has the highest number of reported steps taken (%3.2f), averaged across the days in the dataset.", maxH, maxM, steps_per_interval[wm])
 ```
 
 ## Imputing missing values
 
 ``` {r}
 activitySummary <- summary(activity)
+print(activitySummary)
+
 sprintf("There are %d NAs in activity$steps and none elsewhere.",
         as.integer(strsplit(activitySummary[7, 1], ":")[[1]][2]))
 
 # Is average over day a viable way to imput missing data?
-withNA <- subset(activity, is.na(steps))
 
-withNA$date = factor(withNA$date)
+withNA <- droplevels(subset(activity, is.na(steps)))
+
 table(withNA$date)
 
 # Dates with NAs are missing all data, so no.
@@ -79,6 +117,8 @@ hist(steps_per_day_imputed,
      ylab = "Days", 
      breaks = 25, xlim = c(0, 25000), ylim = c(0, 20))
 
+summary(steps_per_day_imputed)
+
 sprintf("Mean number of (imputed) steps per day is %4.0f.", 
         mean(steps_per_day_imputed))
 sprintf("Median number of (imputed) steps per day is %4.0f.",
@@ -88,39 +128,36 @@ sprintf("Median number of (imputed) steps per day is %4.0f.",
 ## Are there differences in activity patterns between weekdays and weekends?
 
 ``` {r}
-activityImputed$weekday = sapply(as.Date(activityImputed$date), 
-                                 function(x) 
+activityImputed$weekend <- sapply(as.Date(activityImputed$date), 
+                                  function(x) 
                                      weekdays(x) %in% 
-                                     c("Monday", 
-                                       "Tuesday", 
-                                       "Wednesday", 
-                                       "Thursday", 
-                                       "Friday"))
-wkdays = subset(activityImputed, weekday == TRUE)
-wkends = subset(activityImputed, weekday == FALSE)
+                                     c("Saturday", 
+                                       "Sunday"))
+wkends = subset(activityImputed, weekend == TRUE)
+wkdays = subset(activityImputed, weekend == FALSE)
 steps_per_interval_weekdays = tapply(wkdays$steps, 
-                                     as.factor(wkdays$interval), 
+                                     wkdays$hour, 
                                      mean)
 steps_per_interval_weekends = tapply(wkends$steps, 
-                                     as.factor(wkends$interval), 
+                                     wkends$hour, 
                                      mean)
 require(ggplot2)
 
-intervals = unique(activity$interval)
-
 final <- 
     rbind.data.frame(data.frame(steps = steps_per_interval_weekends, 
-                                interval = intervals,
+                                hour = as.numeric(
+                                    names(steps_per_interval_weekends)),
                                 day = "Weekend"),
                      data.frame(steps = steps_per_interval_weekdays,
-                                interval = intervals, 
+                                hour = as.numeric(
+                                    names(steps_per_interval_weekdays)), 
                                 day = "Weekday"))
 
 str(final)
 
-qplot(interval, steps, data = final, geom = "line") + 
+qplot(hour, steps, data = final, geom = "line") + 
     facet_grid(day ~ .) + 
-    labs(x = "Interval Start Time", 
+    labs(x = "Interval Start Time (Hours After Midnight)", 
          y = "Average Number of Steps Taken in Interval", 
          title = "Average Steps Taken in Five-Minute Interval")
 ```
